@@ -16,4 +16,5 @@ dependencies {
     compile 'org.apache.spark:spark-core_2.11:2.2.0'
     compile 'org.apache.spark:spark-sql_2.11:2.2.0'
     compile 'org.jsoup:jsoup:1.10.3'
+    compile 'com.robbypond:boilerpipe:1.2.3'
 }

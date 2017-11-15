@@ -1,5 +1,6 @@
 package nl.vu.wdps1706.warc;
 
+import de.l3s.boilerpipe.extractors.ArticleExtractor;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -58,7 +59,11 @@ public class WarcParser {
                     }
 
                     if (key != null && htmlBuilder.length() > 0) {
-                        return new WarcRecord(key, cleanHtml(htmlBuilder.toString()));
+                        String text = ArticleExtractor.INSTANCE.getText(htmlBuilder.toString()).replaceAll("\\r?\\n", " ").trim();
+
+                        if (!text.isEmpty()) {
+                            return new WarcRecord(key, text);
+                        }
                     }
                     return null;
                 })
