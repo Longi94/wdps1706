@@ -3,7 +3,7 @@ version '1.0-SNAPSHOT'
 
 apply plugin: 'java'
 apply plugin: 'idea'
-apply plugin: 'eclipse'
+
 
 sourceCompatibility = 1.8
 
@@ -15,4 +15,7 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'org.apache.spark:spark-core_2.11:2.2.0'
     compile 'org.apache.spark:spark-sql_2.11:2.2.0'
+    compile group: 'org.apache.opennlp', name: 'opennlp-tools', version: '1.8.3'
+    compile group: 'org.apache.opennlp', name: 'opennlp-uima', version: '1.8.3'
+
 }

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<classpath>
-	<classpathentry excluding="openNLP/lib/" kind="src" path="src/main/java"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8/"/>
-	<classpathentry kind="con" path="org.eclipse.buildship.core.gradleclasspathcontainer"/>
-	<classpathentry kind="lib" path="/Users/konradkaras/Downloads/apache-opennlp-1.8.3/lib/opennlp-uima-1.8.3.jar"/>
-	<classpathentry kind="lib" path="/Users/konradkaras/Downloads/apache-opennlp-1.8.3/lib/opennlp-tools-1.8.3.jar"/>
-	<classpathentry kind="output" path="bin"/>
-</classpath>
