@@ -15,4 +15,5 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'org.apache.spark:spark-core_2.11:2.2.0'
     compile 'org.apache.spark:spark-sql_2.11:2.2.0'
+    compile group: 'org.json', name: 'json', version: '20171018'
 }
