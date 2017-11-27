@@ -61,7 +61,22 @@ public class WarcParser {
                         }
 
                         if (key != null && htmlBuilder.length() > 0) {
-                            String text = ArticleExtractor.INSTANCE.getText(htmlBuilder.toString()).replaceAll("\\r?\\n", " ").trim();
+
+                            String html = htmlBuilder.toString();
+                            Document doc = Jsoup.parse(html);
+
+                            String text;
+
+                            if (!doc.select("summary").isEmpty()) {
+                                StringBuilder textBuilder = new StringBuilder();
+                                for (Element summary : doc.select("summary")) {
+                                    textBuilder.append(ArticleExtractor.INSTANCE.getText(summary.text()));
+                                    textBuilder.append(" ");
+                                }
+                                text = textBuilder.toString().replaceAll("\\r?\\n", " ").trim();
+                            } else {
+                                text = ArticleExtractor.INSTANCE.getText(html).replaceAll("\\r?\\n", " ").trim();
+                            }
 
                             if (!text.isEmpty()) {
                                 return new WarcRecord(key, text);
