@@ -9,7 +9,7 @@ import org.apache.spark.sql.SparkSession;
  */
 public class WarcToText {
 
-    public static final String OUTPUT_PATH = "spark-data/raw-html";
+    private static final String OUTPUT_PATH = "spark-data/raw-text";
 
     public static void main(String[] args) {
 
