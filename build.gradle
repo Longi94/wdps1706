@@ -3,7 +3,7 @@ version '1.0-SNAPSHOT'
 
 apply plugin: 'java'
 apply plugin: 'idea'
-apply plugin: 'eclipse'
+
 
 sourceCompatibility = 1.7
 
@@ -17,4 +17,7 @@ dependencies {
     compile 'org.apache.spark:spark-sql_2.11:2.2.0'
     compile 'org.jsoup:jsoup:1.10.3'
     compile 'com.robbypond:boilerpipe:1.2.3'
+    compile group: 'org.apache.opennlp', name: 'opennlp-tools', version: '1.8.3'
+    compile group: 'org.apache.opennlp', name: 'opennlp-uima', version: '1.8.3'
+
 }
