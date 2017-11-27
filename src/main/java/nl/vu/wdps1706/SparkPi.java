@@ -1,6 +1,7 @@
 package nl.vu.wdps1706;
 
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.SparkSession;
 
 import java.util.ArrayList;
@@ -28,10 +29,13 @@ public class SparkPi {
             l.add(i);
         }
 
-        long count = jsc.parallelize(l).filter(i -> {
-            double x = Math.random();
-            double y = Math.random();
-            return x*x + y*y < 1;
+        long count = jsc.parallelize(l).filter(new Function<Integer, Boolean>() {
+            @Override
+            public Boolean call(Integer i) throws Exception {
+                double x = Math.random();
+                double y = Math.random();
+                return x * x + y * y < 1;
+            }
         }).count();
 
         System.out.println("Pi is roughly " + 4.0 * count / NUM_SAMPLES);
