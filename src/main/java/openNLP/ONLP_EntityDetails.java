@@ -1,6 +1,8 @@
 package openNLP;
 
-public class ONLP_EntityDetails {
+import java.io.Serializable;
+
+public class ONLP_EntityDetails implements Serializable {
     public String name;
     public String type;
     public double prob;

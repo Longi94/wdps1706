@@ -2,6 +2,7 @@ package nl.vu.wdps1706;
 
 import nl.vu.wdps1706.opennlp.NLPProcessor;
 import nl.vu.wdps1706.warc.WarcParser;
+import openNLP.ONLP_ResultWrapper;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -25,6 +26,6 @@ public class FullPipelineRunner {
                 .getOrCreate();
 
         Dataset<Row> texts = WarcParser.parse(spark, args[0], args[1]);
-        JavaRDD<Object> entities = NLPProcessor.recognizeEntities(texts.toJavaRDD());
+        JavaRDD<ONLP_ResultWrapper> entities = NLPProcessor.recognizeEntities(texts.toJavaRDD());
     }
 }
