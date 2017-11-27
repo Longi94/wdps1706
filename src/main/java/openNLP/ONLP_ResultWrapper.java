@@ -5,8 +5,8 @@ import java.util.List;
 
 public class ONLP_ResultWrapper {
 
-    String documentId;
-    List<ONLP_SentenceDetails> sentenceWrappers;
+    public String documentId;
+    public List<ONLP_SentenceDetails> sentenceWrappers;
 
     public ONLP_ResultWrapper() {
         documentId = null;

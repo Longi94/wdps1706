@@ -2,17 +2,9 @@ package nl.vu.wdps1706;
 
 
 import openNLP.ONLP_Core;
-import openNLP.ONLP_POSTagger;
-import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.sql.SQLContext;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import openNLP.ONLP_EntityDetails;
+import openNLP.ONLP_ResultWrapper;
+import openNLP.ONLP_SentenceDetails;
 
 /**
  * @author lngtr
@@ -23,21 +15,25 @@ public class Main {
 
 
     public static void main(String[] args) {
-      //try{
-        //SparkConf sparkConf = new SparkConf().setAppName("TestApp");
-        //JavaSparkContext sparkContext = new JavaSparkContext(sparkConf);
-        //SQLContext sqlContext = new SQLContext(sparkContext);
 
-      //String modelFile = Main.class.getClassLoader().getResource("ModelsDir/en-pos-maxent.bin").getFile();
-      //URL modelFile = ClassLoader.getSystemResource("en-pos-maxent.bin");
+        String contents = "Pierre Vinken, 61 years old, will join the board as a nonexecutive director Nov. 29. Mr. Vinken is\n" +
+                "chairman of Elsevier N.V., the Dutch publishing group. Rudolph Agnew, 55 years\n" +
+                "old and former chairman of Consolidated Gold Fields PLC, was named a director of this\n" +
+                "British industrial conglomerate.";
 
-      String path = "C:\\Users\\Daniel\\Desktop\\Files\\School and work\\Master's\\1st year\\Period 2\\Web Data Processing Systems\\Assignment\\raw data\\tmp.txt";
-      try {
-        String contents = new String(Files.readAllBytes(Paths.get(path)));
-        ONLP_Core.process(contents);
-      }catch(IOException e){
-        e.printStackTrace();
-      }
+        ONLP_ResultWrapper result = ONLP_Core.process(contents);
+
+        for(ONLP_SentenceDetails sw : result.sentenceWrappers) {
+            System.out.println("==============");
+            System.out.println(sw.sentence);
+            System.out.println("--------");
+            for(ONLP_EntityDetails entity: sw.entities) {
+                System.out.println("entity: " + entity.name + ", type: " + entity.type + ", prob: " + entity.prob);
+            }
+            System.out.println("==============");
+            System.out.println();
+        }
+
 
 
     }
