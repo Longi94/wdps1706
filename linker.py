@@ -46,57 +46,68 @@ def get_candidates(query):
 
   return labels
 
+
 def rank_candidates(candidate_list, nr):
-  facts  = {}
+  """
+  TO BE COMPLETED
+  """
+  facts = {}
+
   def get_best(i):
     return math.log(facts[i]) * scores[i]
   for i in candidate_list:
-    response = requests.post(TRIDENT_URL, data={'print': False, 'query': po_template % i})
+    response = requests.post(
+        TRIDENT_URL, data={'print': False, 'query': po_template % i})
     if response:
         response = response.json()
-        n = int(response.get('stats',{}).get('nresults',0))
-        print("Found " + str(n) + " facts about " + str(i) + " [" + candidate_list[i] + "] with Sparql")
+        n = int(response.get('stats', {}).get('nresults', 0))
+        print("Found " + str(n) + " facts about " + str(i) +
+              " [" + candidate_list[i] + "] with Sparql")
         candidate_list[i]['facts'] = n
-  return sorted(candidate_list, key=lambda x: x['facts'], reverse=True)[:nr] 
-
+  return sorted(candidate_list, key=lambda x: x['facts'], reverse=True)[:nr]
+  
 
 def get_abstract(query, nr_sent=1):
-  response = requests.get("http://dbpedia.org/page/%s" % query.replace(" " , "_"))
-  if response: 
+  response = requests.get("http://dbpedia.org/page/%s" %
+                          query.replace(" ", "_"))
+  if response:
     html = response.content
 
     parsed = lxml.html.fromstring(html).cssselect(
         "body > div.container > div.row > div:nth-child(1) > p")
     return parsed[0].text
 
-def get_google(query_id): 
-  response = requests.get("https://www.google.com/search?q=knowledge+graph+search+api&kponly&kgmid=/" + query_id)
-  if response: 
+
+def get_google(query_id):
+  response = requests.get(
+      "https://www.google.com/search?q=knowledge+graph+search+api&kponly&kgmid=/" + query_id)
+  if response:
     html = response.content
     parsed = lxml.fromstring(html).cssselect("_gdf kno-fb-ctx")
     parsed_lines = lxml.fromstring(html).cssselect("")
 
-  
 
 def compare_sent(s1, s2, model):
   tokenList1 = s1.split(" ")
   tokenList2 = s2.split(" ")
 
-  sim = 0 
-  for t1 in tokenList1: 
-    for t2 in tokenList2: 
+  sim = 0
+  for t1 in tokenList1:
+    for t2 in tokenList2:
       sim += cosine_similarity(t1, t2, model)
   return sim
 
-def cosine_similarity(w1, w2, model): 
+
+def cosine_similarity(w1, w2, model):
   w1 = w1.lower()
   w2 = w2.lower()
-  try: 
+  try:
     return numpy.dot(model[w1], model[w2]) / (numpy.linalg.norm(model[w1]) * numpy.linalg.norm(model[w2]))
-  except: 
+  except:
     return 0
 
-if __name__ == "__main__": 
+
+if __name__ == "__main__":
   query = sys.argv[1]
   model = sys.argv[2]
   context = sys.argv[3]
@@ -109,20 +120,21 @@ if __name__ == "__main__":
   labels = get_candidates(query)
   print(labels)
   model = word2vec.load(sys.argv[2])
-  best = 0 
+  best = 0
   winner = ""
-  for candidate in labels: 
-    score = 0 
+  for candidate in labels:
+    score = 0
     print("working on cadidate:", candidate)
     abst = get_abstract(candidate)
-    if not abst: 
+    if not abst:
       #print("no abstract :(")
       score = compare_sent(query + " " + _type, context, model)
       print("Sim result: ", candidate, score)
       continue
     score = compare_sent(context + " " + _type, abst, model)
     print("Sim result: ", candidate, score)
-    if score > best: 
+    if score > best:
       best = score
       print(abst)
-      print("######################################Current winner", labels[candidate], candidate) 
+      print("######################################Current winner",
+            labels[candidate], candidate)
