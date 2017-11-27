@@ -1,38 +1,60 @@
 package openNLP;
 
 import opennlp.tools.util.Span;
-import openNLP.ONLP_Lemmatizer;
-import openNLP.ONLP_NER;
-import openNLP.ONLP_POSTagger;
-import openNLP.ONLP_Tokenizer;
 
 public class ONLP_Core {
 
-	public static void process(String content) {
+	public static ONLP_ResultWrapper process(String content) {
+		ONLP_ResultWrapper result = new ONLP_ResultWrapper();
 
 		// ---- START PROCESSING
 
-		// #1 Tokenize
-		String[] tokens = ONLP_Tokenizer.tokenize(content);
+		// #0 Detect sentences
+		String[] sentences = ONLP_SentenceDetector.detectSentences(content);
 
-		// #2 POS Tagger
-		String[] posTags = ONLP_POSTagger.tag(tokens);
+		for(String sentence : sentences) {
+			ONLP_SentenceDetails sentenceWrapper = new ONLP_SentenceDetails();
+			sentenceWrapper.sentence = sentence;
 
-		// #3 Lemmatize
-		String[] lemmas = ONLP_Lemmatizer.lemmatize(tokens, posTags);
+			// #1 Tokenize
+			String[] tokens = ONLP_Tokenizer.tokenize(sentence);
 
-		// #3.1 replace 'O' lemmas by original token
-		String[] processedText = new String[tokens.length];
-		for(int i = 0; i < lemmas.length; i++) {
-			if(lemmas[i].equals("O")) processedText[i] = tokens[i];
-			else processedText[i] = lemmas[i];
+			// #2 POS Tagger
+			String[] posTags = ONLP_POSTagger.tag(tokens);
+
+			// #3 Lemmatize
+			String[] lemmas = ONLP_Lemmatizer.lemmatize(tokens, posTags);
+
+			// #3.1 replace 'O' lemmas by original token
+			String[] processedText = new String[tokens.length];
+			for (int i = 0; i < lemmas.length; i++) {
+				if (lemmas[i].equals("O")) processedText[i] = tokens[i];
+				else processedText[i] = lemmas[i];
+			}
+
+			// #4 NER
+			Span nameSpans[] = ONLP_NER.findEntities(processedText);
+
+			for(Span nameSpan : nameSpans) {
+				String entityName = "";
+				String entityType = nameSpan.getType();
+
+				int startPoint = nameSpan.getStart();
+				int endPoint = nameSpan.getEnd();
+
+				for(int x = startPoint; x < endPoint; x++) {
+					entityName += tokens[x] + " ";
+				}
+
+				sentenceWrapper.entities.put(entityName,entityType);
+			}
+
+			result.sentenceWrappers.add(sentenceWrapper);
 		}
-
-		// #4 NER
-		Span nameSpans[] = ONLP_NER.findEntities(processedText);
 
 		// ---- END PROCESSING
 
+		/*
 		System.out.println("Tokens\t\t\tPOS\t\t\tLemma\\t\t\tResult\n-------------------------------");
 		for(int i=0;i<tokens.length;i++){
 			System.out.println(tokens[i] + "\t\t\t" + posTags[i] + "\t\t\t" + lemmas[i] + "\t\t\t" + processedText[i]);
@@ -53,6 +75,10 @@ public class ONLP_Core {
 			System.out.println("");
 			System.out.println("------ END -----");
 		}
+		*/
+
+
+		return result;
 
 	}
 
