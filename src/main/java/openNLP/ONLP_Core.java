@@ -50,33 +50,11 @@ public class ONLP_Core {
 				sentenceWrapper.entities.add(new ONLP_EntityDetails(entityName, entityType, entityProb));
 			}
 
-			result.sentenceWrappers.add(sentenceWrapper);
-		}
-
-		// ---- END PROCESSING
-
-		/*
-		System.out.println("Tokens\t\t\tPOS\t\t\tLemma\\t\t\tResult\n-------------------------------");
-		for(int i=0;i<tokens.length;i++){
-			System.out.println(tokens[i] + "\t\t\t" + posTags[i] + "\t\t\t" + lemmas[i] + "\t\t\t" + processedText[i]);
-		}
-
-		System.out.println("====================================================");
-
-		for(int i=0;i<nameSpans.length;i++) {
-			System.out.println();
-			System.out.println("#### " + i + " ###");
-			System.out.print("[" + nameSpans[i].getType() + "]: [" + nameSpans[i].getStart() + "," + nameSpans[i].getEnd() + "] => ");
-			int startPoint = nameSpans[i].getStart();
-			int endPoint = nameSpans[i].getEnd();
-
-			for(int x = startPoint; x < endPoint; x++) {
-				System.out.print(tokens[x] + " ");
+			// keep only sentences with entities
+			if(sentenceWrapper.entities.size() > 0) {
+				result.sentenceWrappers.add(sentenceWrapper);
 			}
-			System.out.println("");
-			System.out.println("------ END -----");
 		}
-		*/
 
 
 		return result;
