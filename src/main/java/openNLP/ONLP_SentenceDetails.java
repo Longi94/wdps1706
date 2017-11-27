@@ -1,15 +1,15 @@
 package openNLP;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ONLP_SentenceDetails {
 
-    String sentence;
-    Map<String,String> entities;
+    public String sentence;
+    public List<ONLP_EntityDetails> entities;
 
     public ONLP_SentenceDetails() {
         sentence = null;
-        entities = new HashMap<String,String>();
+        entities = new ArrayList<ONLP_EntityDetails>();
     }
 }

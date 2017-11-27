@@ -38,6 +38,7 @@ public class ONLP_Core {
 			for(Span nameSpan : nameSpans) {
 				String entityName = "";
 				String entityType = nameSpan.getType();
+				double entityProb = nameSpan.getProb();
 
 				int startPoint = nameSpan.getStart();
 				int endPoint = nameSpan.getEnd();
@@ -46,7 +47,7 @@ public class ONLP_Core {
 					entityName += tokens[x] + " ";
 				}
 
-				sentenceWrapper.entities.put(entityName,entityType);
+				sentenceWrapper.entities.add(new ONLP_EntityDetails(entityName, entityType, entityProb));
 			}
 
 			result.sentenceWrappers.add(sentenceWrapper);
