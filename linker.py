@@ -116,15 +116,18 @@ if __name__ == "__main__":
   regex2 = re.compile('\s+')
   context = regex.sub(' ', context)
   context = regex2.sub(' ', context)
-  print(context)
   labels = get_candidates(query)
+  print("All candidates are:")
   print(labels)
-  model = word2vec.load(sys.argv[2])
+  print("##############")
+  print("Loading model...")
+  model = word2vec.WordVectors.from_binary(sys.argv[2], encoding="ISO-8859-1")
+  print("Model loaded.")
   best = 0
   winner = ""
   for candidate in labels:
     score = 0
-    print("working on cadidate:", candidate)
+    print("\n# working on cadidate:", candidate)
     abst = get_abstract(candidate)
     if not abst:
       #print("no abstract :(")
