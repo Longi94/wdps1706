@@ -9,10 +9,15 @@ public class ONLP_Core {
 
 		// ---- START PROCESSING
 
-		// #0 Detect sentences
+		// Detect sentences
 		String[] sentences = ONLP_SentenceDetector.detectSentences(content);
 
 		for(String sentence : sentences) {
+			// #0 Detect Language
+			String lang = ONLP_LanguageDetector.getLanguage(sentence);
+			// skip non-english sentences
+			if(!lang.equals("eng")) continue;
+
 			ONLP_SentenceDetails sentenceWrapper = new ONLP_SentenceDetails();
 			sentenceWrapper.sentence = sentence;
 
