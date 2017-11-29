@@ -13,7 +13,7 @@ public class ONLP_SentenceDetector {
     private static void createInstance() {
         InputStream modelIn = null;
         try {
-            modelIn = ONLP_POSTagger.class.getResourceAsStream("/en-sent.bin");
+            modelIn = ONLP_SentenceDetector.class.getResourceAsStream("/en-sent.bin");
             SentenceModel model = new SentenceModel(modelIn);
             sentenceDetector = new SentenceDetectorME(model);
         } catch (Exception e) {

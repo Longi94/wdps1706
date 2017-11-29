@@ -1,14 +1,12 @@
 package openNLP;
 
+import opennlp.tools.langdetect.Language;
+import opennlp.tools.langdetect.LanguageDetector;
 import opennlp.tools.langdetect.LanguageDetectorME;
 import opennlp.tools.langdetect.LanguageDetectorModel;
-import opennlp.tools.langdetect.LanguageDetector;
-import opennlp.tools.langdetect.Language;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 
 public class ONLP_LanguageDetector {
 
@@ -17,12 +15,9 @@ public class ONLP_LanguageDetector {
     private static void createInstance() {
         InputStream modelIn = null;
         try {
-            URL resourceURL = ONLP_POSTagger.class.getClassLoader().getResource("langdetect-183.bin");
-            if(resourceURL != null) {
-                modelIn = new FileInputStream(resourceURL.getFile());
-                LanguageDetectorModel model = new LanguageDetectorModel(modelIn);
-                languageDetector = new LanguageDetectorME(model);
-            }
+            modelIn = ONLP_LanguageDetector.class.getResourceAsStream("/langdetect-183.bin");
+            LanguageDetectorModel model = new LanguageDetectorModel(modelIn);
+            languageDetector = new LanguageDetectorME(model);
         } catch (Exception e) {
             e.printStackTrace();
 
