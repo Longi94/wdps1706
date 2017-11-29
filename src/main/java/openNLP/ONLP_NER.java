@@ -41,7 +41,7 @@ public class ONLP_NER {
 	}
 
 	public static Span[] findEntities(String[] input) {
-		if(nameFinders == null) {
+		if(nameFinders == null || nameFinders.length == 0) {
 			createInstance();
 		}
 		List<Span> entities = new ArrayList<Span>();
