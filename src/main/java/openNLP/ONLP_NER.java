@@ -1,53 +1,39 @@
 package openNLP;
 
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.*;
-
 import opennlp.tools.namefind.NameFinderME;
 import opennlp.tools.namefind.TokenNameFinderModel;
 import opennlp.tools.util.Span;
 
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public class ONLP_NER {
-  /*
-	private static String[] nerModels = {
-		"models/en-ner-date.bin",
-		"models/en-ner-location.bin",
-		"models/en-ner-money.bin",
-		"models/en-ner-organization.bin",
-		"models/en-ner-percentage.bin",
-		"models/en-ner-person.bin",
-		"models/en-ner-time.bin"
-	};*/
 
 	private static List<NameFinderME> nameFinders = null;
 
-  private static ArrayList<String> initializeModelsList(){
-    ArrayList<String> nerModels = new ArrayList<>();
-    try {
-      nerModels.add(ONLP_NER.class.getClassLoader().getResource("en-ner-date.bin").getFile());
-      nerModels.add(ONLP_NER.class.getClassLoader().getResource("en-ner-location.bin").getFile());
-      nerModels.add(ONLP_NER.class.getClassLoader().getResource("en-ner-money.bin").getFile());
-      nerModels.add(ONLP_NER.class.getClassLoader().getResource("en-ner-organization.bin").getFile());
-      nerModels.add(ONLP_NER.class.getClassLoader().getResource("en-ner-percentage.bin").getFile());
-      nerModels.add(ONLP_NER.class.getClassLoader().getResource("en-ner-person.bin").getFile());
-      nerModels.add(ONLP_NER.class.getClassLoader().getResource("en-ner-time.bin").getFile());
-    }catch(NullPointerException e){
-      e.printStackTrace();
-    }
-    return nerModels;
-  }
+	private static final String[] MODELS = new String[]{
+            "/en-ner-date.bin",
+            "/en-ner-location.bin",
+            "/en-ner-money.bin",
+            "/en-ner-organization.bin",
+            "/en-ner-percentage.bin",
+            "/en-ner-person.bin",
+            "/en-ner-time.bin"
+    };
+
 	private static void createInstance() {
 
-    ArrayList<String> nerModels = initializeModelsList();
 		nameFinders = new ArrayList<>();
-		InputStream modelIn = null;
+		InputStream modelIn;
 		try {
-			for(int i = 0; i < nerModels.size(); i++) {
-				modelIn = new FileInputStream(nerModels.get(i));
-				TokenNameFinderModel model = new TokenNameFinderModel(modelIn);
-				nameFinders.add(new NameFinderME(model));
-			}
+            for (String path : MODELS) {
+                modelIn = ONLP_NER.class.getResourceAsStream(path);
+                TokenNameFinderModel model = new TokenNameFinderModel(modelIn);
+                nameFinders.add(new NameFinderME(model));
+                modelIn.close();
+            }
 
 		} catch (Exception e) {
 			e.printStackTrace();
