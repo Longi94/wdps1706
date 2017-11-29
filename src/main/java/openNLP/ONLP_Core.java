@@ -61,6 +61,9 @@ public class ONLP_Core {
 			}
 		}
 
+		//clear adaptive data of NER
+		ONLP_NER.clearAdaptiveData();
+
 
 		return result;
 

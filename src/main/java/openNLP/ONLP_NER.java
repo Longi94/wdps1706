@@ -11,7 +11,7 @@ import java.util.List;
 
 public class ONLP_NER {
 
-	private static List<NameFinderME> nameFinders = null;
+	private static NameFinderME[] nameFinders = null;
 
 	private static final String[] MODELS = new String[]{
             "/en-ner-date.bin",
@@ -25,13 +25,13 @@ public class ONLP_NER {
 
 	private static void createInstance() {
 
-		nameFinders = new ArrayList<>();
+		nameFinders = new NameFinderME[MODELS.length];
 		InputStream modelIn;
 		try {
-            for (String path : MODELS) {
-                modelIn = ONLP_NER.class.getResourceAsStream(path);
+            for (int i =0; i < MODELS.length; i++) {
+                modelIn = ONLP_NER.class.getResourceAsStream(MODELS[i]);
                 TokenNameFinderModel model = new TokenNameFinderModel(modelIn);
-                nameFinders.add(new NameFinderME(model));
+                nameFinders[i] = new NameFinderME(model);
                 modelIn.close();
             }
 
@@ -52,6 +52,14 @@ public class ONLP_NER {
 
 		Span[] result = new Span[entities.size()];
 		return entities.toArray(result);
+	}
+
+	public static void clearAdaptiveData() {
+		if(nameFinders.length > 0) {
+			for (int i = 0; i < nameFinders.length; i++) {
+				nameFinders[i].clearAdaptiveData();
+			}
+		}
 	}
 
 
