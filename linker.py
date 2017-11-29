@@ -106,7 +106,6 @@ def cosine_similarity(w1, w2, model):
   except:
     return 0
 
-
 if __name__ == "__main__":
   query = sys.argv[1]
   model = sys.argv[2]
