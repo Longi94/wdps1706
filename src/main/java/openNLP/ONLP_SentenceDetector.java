@@ -3,10 +3,8 @@ package openNLP;
 import opennlp.tools.sentdetect.SentenceDetectorME;
 import opennlp.tools.sentdetect.SentenceModel;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 
 public class ONLP_SentenceDetector {
 
@@ -15,12 +13,9 @@ public class ONLP_SentenceDetector {
     private static void createInstance() {
         InputStream modelIn = null;
         try {
-            URL resourceURL = ONLP_POSTagger.class.getClassLoader().getResource("en-sent.bin");
-            if(resourceURL != null) {
-                modelIn = new FileInputStream(resourceURL.getFile());
-                SentenceModel model = new SentenceModel(modelIn);
-                sentenceDetector = new SentenceDetectorME(model);
-            }
+            modelIn = ONLP_POSTagger.class.getResourceAsStream("/en-sent.bin");
+            SentenceModel model = new SentenceModel(modelIn);
+            sentenceDetector = new SentenceDetectorME(model);
         } catch (Exception e) {
             e.printStackTrace();
 
