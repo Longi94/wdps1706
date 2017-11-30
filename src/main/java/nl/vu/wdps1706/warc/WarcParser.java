@@ -1,5 +1,6 @@
 package nl.vu.wdps1706.warc;
 
+import de.l3s.boilerpipe.BoilerpipeProcessingException;
 import de.l3s.boilerpipe.extractors.ArticleExtractor;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
@@ -15,6 +16,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.parser.Parser;
+import org.jsoup.select.Elements;
 import scala.Tuple2;
 
 /**
@@ -76,18 +78,23 @@ public class WarcParser {
                             String html = htmlBuilder.toString();
                             Document doc = Jsoup.parse(html);
 
-                            String text;
+                            String text = "";
 
-                            if (!doc.select("summary").isEmpty()) {
-                                StringBuilder textBuilder = new StringBuilder();
-                                for (Element summary : doc.select("summary")) {
-                                    textBuilder.append(ArticleExtractor.INSTANCE.getText(summary.text()));
-                                    textBuilder.append(" ");
-                                }
-                                text = textBuilder.toString().replaceAll("\\r?\\n", " ").trim();
-                            } else {
-                                text = ArticleExtractor.INSTANCE.getText(html).replaceAll("\\r?\\n", " ").trim();
+                            removeComments(doc);
+                            doc.select("script,link,style,img,svg,.partner-header-html").remove();
+
+                            String summariesText = getEmbeddedHtmlText(doc, "summary");
+                            String captionText = getEmbeddedHtmlText(doc, "figcaption");
+
+                            if (!summariesText.isEmpty()) {
+                                text += summariesText + ". ";
                             }
+
+                            if (!captionText.isEmpty()) {
+                                text += captionText + ". ";
+                            }
+
+                            text += ArticleExtractor.INSTANCE.getText(doc.html()).replaceAll("\\r?\\n", " ").trim();
 
                             if (!text.isEmpty()) {
                                 return new WarcRecord(key, text);
@@ -107,6 +114,27 @@ public class WarcParser {
         return session.sqlContext().createDataFrame(records, WarcRecord.class);
     }
 
+    private static String getEmbeddedHtmlText(Document doc, String tag) throws BoilerpipeProcessingException {
+        Elements elements = doc.select(tag);
+
+        if (!elements.isEmpty()) {
+            StringBuilder textBuilder = new StringBuilder();
+            for (Element element : elements) {
+                String text = ArticleExtractor.INSTANCE.getText(element.text());
+
+                if (!text.isEmpty()) {
+                    textBuilder.append(text).append(". ");
+                }
+            }
+
+            elements.remove();
+
+            return textBuilder.toString().replaceAll("\\r?\\n", " ").trim();
+        }
+
+        return "";
+    }
+
     private static void removeComments(Node node) {
         for (int i = 0; i < node.childNodeSize(); ) {
             Node child = node.childNode(i);
@@ -119,7 +147,7 @@ public class WarcParser {
         }
     }
 
-    private static String cleanHtml(String html) {
+    public static String cleanHtml(String html) {
         Document doc = Jsoup.parse(html, "", Parser.htmlParser());
 
         doc.select("script,link,style,img").remove();
