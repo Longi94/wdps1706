@@ -55,7 +55,7 @@ public class ONLP_NER {
 	}
 
 	public static void clearAdaptiveData() {
-		if(nameFinders.length > 0) {
+		if(nameFinders != null && nameFinders.length > 0) {
 			for (int i = 0; i < nameFinders.length; i++) {
 				nameFinders[i].clearAdaptiveData();
 			}

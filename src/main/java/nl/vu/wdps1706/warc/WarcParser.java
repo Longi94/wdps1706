@@ -25,15 +25,26 @@ public class WarcParser {
     public static Dataset<Row> parse(SparkSession session, String path, final String recordAttribute) {
         Configuration conf = new Configuration();
         conf.set("textinputformat.record.delimiter", "WARC/1.0");
-        JavaRDD<Tuple2<LongWritable, Text>> rdd = session.sparkContext()
+        JavaRDD<String> rdd = session.sparkContext()
                 .newAPIHadoopFile(path, TextInputFormat.class, LongWritable.class, Text.class, conf)
-                .toJavaRDD();
+                .toJavaRDD()
+                .map(new Function<Tuple2<LongWritable, Text>, String>() {
+                    @Override
+                    public String call(Tuple2<LongWritable, Text> record) throws Exception {
+                        return new String(record._2.copyBytes());
+                    }
+                });
+
+        if (rdd.getNumPartitions() == 1) {
+            // Average page length in the sample data is4689049584/167774=27948 bytes, which is 2289 pages per 64Mb partition
+            long count = rdd.count();
+            rdd = rdd.repartition((int) (count / 2289L));
+        }
 
         JavaRDD<WarcRecord> records = rdd
-                .map(new Function<Tuple2<LongWritable, Text>, WarcRecord>() {
+                .map(new Function<String, WarcRecord>() {
                     @Override
-                    public WarcRecord call(Tuple2<LongWritable, Text> record) throws Exception {
-                        String payload = new String(record._2.copyBytes());
+                    public WarcRecord call(String payload) throws Exception {
 
                         if (payload.isEmpty()) {
                             return null;
