@@ -1,6 +1,5 @@
 package nl.vu.wdps1706.tools;
 
-import nl.vu.wdps1706.SparkPi;
 import nl.vu.wdps1706.warc.WarcParser;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
@@ -26,7 +25,7 @@ public class WebPageExtractor {
 
         SparkSession spark = SparkSession
                 .builder()
-                .appName(SparkPi.class.getSimpleName())
+                .appName(WebPageExtractor.class.getSimpleName())
                 .getOrCreate();
 
 
