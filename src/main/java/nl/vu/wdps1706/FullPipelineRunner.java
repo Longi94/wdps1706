@@ -20,8 +20,8 @@ public class FullPipelineRunner {
 
     public static void main(String[] args) {
 
-        if (args.length < 2) {
-            System.out.println("Usage: [input path] [identifier]");
+        if (args.length < 3) {
+            System.out.println("Usage: [input path] [identifier] [number of executors]");
             System.exit(-1);
         }
 
@@ -30,7 +30,7 @@ public class FullPipelineRunner {
                 .appName(FullPipelineRunner.class.getSimpleName())
                 .getOrCreate();
 
-        Dataset<Row> texts = WarcParser.parse(spark, args[0], args[1]);
+        Dataset<Row> texts = WarcParser.parse(spark, args[0], args[1], Integer.parseInt(args[2]));
         JavaRDD<ONLP_ResultWrapper> entities = NLPProcessor.recognizeEntities(texts.toJavaRDD());
 
         entities.map(new Function<ONLP_ResultWrapper, String>() {

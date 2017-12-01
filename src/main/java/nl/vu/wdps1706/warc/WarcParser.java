@@ -24,7 +24,8 @@ import scala.Tuple2;
  * @since 2017-11-15
  */
 public class WarcParser {
-    public static Dataset<Row> parse(SparkSession session, String path, final String recordAttribute) {
+    public static Dataset<Row> parse(SparkSession session, String path, final String recordAttribute,
+                                     int numExecutors) {
         Configuration conf = new Configuration();
         conf.set("textinputformat.record.delimiter", "WARC/1.0");
         JavaRDD<String> rdd = session.sparkContext()
@@ -37,10 +38,8 @@ public class WarcParser {
                     }
                 });
 
-        if (rdd.getNumPartitions() == 1) {
-            // Average page length in the sample data is4689049584/167774=27948 bytes, which is 2289 pages per 64Mb partition
-            long count = rdd.count();
-            rdd = rdd.repartition((int) (count / 2289L));
+        if (rdd.getNumPartitions() < numExecutors) {
+            rdd = rdd.repartition(numExecutors);
         }
 
         JavaRDD<WarcRecord> records = rdd

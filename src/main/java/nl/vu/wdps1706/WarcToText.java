@@ -13,8 +13,8 @@ public class WarcToText {
 
     public static void main(String[] args) {
 
-        if (args.length < 2) {
-            System.out.println("Usage: [input path] [identifier]");
+        if (args.length < 3) {
+            System.out.println("Usage: [input path] [identifier] [number of executors]");
             System.exit(-1);
         }
 
@@ -23,6 +23,6 @@ public class WarcToText {
                 .appName(WarcToText.class.getSimpleName())
                 .getOrCreate();
 
-        WarcParser.parse(spark, args[0], args[1]).write().csv(OUTPUT_PATH);
+        WarcParser.parse(spark, args[0], args[1], Integer.parseInt(args[2])).write().csv(OUTPUT_PATH);
     }
 }
