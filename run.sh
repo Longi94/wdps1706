@@ -30,15 +30,4 @@ PYSPARK_PYTHON=$(readlink -f $(which python)) ~/spark-2.1.2-bin-without-hadoop/b
 } &> "logs_${timestamp}"
 
 
-hdfs_ls=$(hdfs dfs -ls /user/wdps1706/spark-data/links)
-readarray -t files <<< "$hdfs_ls"
-
-regex="^.*(\/user\/wdps1706\/spark-data\/links\/part-[0-9][0-9][0-9][0-9][0-9])$"
-for line in "${files[@]}"
-do
-    if [[ ${line} =~ ${regex} ]]
-    then
-        path="${BASH_REMATCH[1]}"
-        hdfs dfs -cat ${path}
-    fi
-done
+hdfs dfs -cat /user/wdps1706/spark-data/links/part-*
