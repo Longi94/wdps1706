@@ -35,8 +35,6 @@ SELECT DISTINCT * WHERE {
 }
 """
 
-features = []
-
 
 def get_dbpedia_entity_type(link, try_num, e_type):
     # print("db entity type link")
@@ -301,8 +299,6 @@ def get_candidates(query):
 
 
 def rank_candidates(candidate_list, nr):
-    facts = {}
-    u_id = 0
     for i in candidate_list:
         response = requests.post(TRIDENT_URL, data={'print': False, 'query': po_template % candidate_list[i]['id']})
         if response:
@@ -332,17 +328,6 @@ def get_trident_bindings(ids_set):
                 # print(binding)
                 bindings[f_id].append(binding)
     return bindings
-
-
-def compare_sent(s1, s2, model):
-    tokenList1 = s1.split(" ")
-    tokenList2 = s2.split(" ")
-
-    sim = 0
-    for t1 in tokenList1:
-        for t2 in tokenList2:
-            sim += cosine_similarity(t1, t2, model)
-    return sim
 
 
 def cosine_similarity(w1, w2, model):
