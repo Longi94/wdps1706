@@ -363,17 +363,7 @@ def fix_binding_urls(bindings):
             # print(bindings.values()[0])
             url = binding.values()[0]["value"]
             if "dbpedia" in url:
-
-                split_url = url.split('.')
-                # print(split_url)
-                split_url[-1] = "." + split_url[-1]
-                if "dbpedia" in split_url[0]:
-                    new_url = split_url[0]
-                else:
-                    new_url = "http://"
-                for part_url in split_url[1:]:
-                    new_url = new_url + part_url
-
+                new_url = "http://" + url[url.find("dbpedia"):]
                 fixed_bindings[f_id].add(new_url)
             elif "wikidata" in url:
                 fixed_bindings[f_id].add(url)
