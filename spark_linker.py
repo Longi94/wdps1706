@@ -11,8 +11,10 @@ def process_sentence(sentence):
     links = []
 
     for entity in sentence['ents']:
-        links.append({'name': entity['name'],
-                      'entity_id': run(entity['name'], sentence['text'], entity['type'], MODEL_PATH)})
+        kb_id = run(entity['name'], sentence['text'], entity['type'], MODEL_PATH)
+
+        if kb_id is not None:
+            links.append({'name': entity['name'], 'entity_id': kb_id})
 
     return links
 

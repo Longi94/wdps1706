@@ -16,7 +16,7 @@ nltk.download('stopwords')
 stop_words = set(stopwords.words('english'))
 
 ELASTICSEARCH_URL = 'http://10.149.0.127:9200/freebase/label/_search'
-TRIDENT_URL = 'http://10.141.0.124:9001/sparql'
+TRIDENT_URL = 'http://10.141.0.69:9069/sparql'
 prefixes = """
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -377,6 +377,10 @@ def run(query, context, _type, modelPath):
         model = word2vec.WordVectors.from_binary(modelPath, encoding="ISO-8859-1")
 
     labels = get_candidates(query)
+
+    if len(labels) == 0:
+        return None
+
     print("-------- LABELS --------")
     top_candidates = rank_candidates(labels, 10)
     print("-------- TOP CANDIDATES --------")
