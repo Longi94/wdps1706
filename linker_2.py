@@ -284,7 +284,7 @@ def get_entity_KbID(features):
 
 def get_candidates(query):
     print('Searching for "%s"...' % query)
-    response = requests.get(ELASTICSEARCH_URL, params={'q': query, 'size': 100})
+    response = requests.get(ELASTICSEARCH_URL, params={'q': query, 'size': 5})
     labels = {}
     if response:
         response = response.json()
