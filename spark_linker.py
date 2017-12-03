@@ -4,7 +4,7 @@ from pyspark.sql import SparkSession
 
 INPUT_PATH = 'spark-data/entities'
 OUTPUT_PATH = 'spark-data/links'
-MODEL_PATH = '../kian/word2vec/data/text8-vector.bin'
+MODEL_PATH = '/var/scratch/wdps1706/GoogleNews-vectors-negative300.bin'
 
 
 def process_sentence(sentence):
