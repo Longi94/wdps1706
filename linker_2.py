@@ -34,15 +34,16 @@ SELECT DISTINCT * WHERE {
 }
 """
 
-features=[]
+features = []
+
 
 def get_dbpedia_entity_type(link, try_num, e_type):
-    #print("db entity type link")
-    #print(link)
+    # print("db entity type link")
+    # print(link)
     response = requests.get(link.strip())
     if response.status_code == 200:
         html = response.content
-        soup = BeautifulSoup(html,'html.parser')
+        soup = BeautifulSoup(html, 'html.parser')
         div = soup.find_all('div', class_='page-resource-uri')
         if div:
             div = div[0]
@@ -65,7 +66,9 @@ def get_dbpedia_entity_type(link, try_num, e_type):
                 elif entity_name.lower() == 'class':
                     descripition_table = soup.find_all('div', class_='row')
                     for row in descripition_table:
-                        subclass_type = row.find('table', class_="description table table-striped").find('a', rel="rdfs:subClassOf" ).get_text().split(':')[1]
+                        subclass_type = row.find('table', class_="description table table-striped").find('a',
+                                                                                                         rel="rdfs:subClassOf").get_text().split(
+                            ':')[1]
                         if subclass_type.lower() == e_type.lower():
                             return True
                         else:
@@ -73,7 +76,7 @@ def get_dbpedia_entity_type(link, try_num, e_type):
             else:
                 return False
     return False
-    
+
 
 def get_wikidata_entity_type(url, num_try, kb_e_type, orig_e_type):
     if num_try > 0:
@@ -98,7 +101,7 @@ def get_wikidata_entity_type(url, num_try, kb_e_type, orig_e_type):
                                 elif link_text == "organization":
                                     return True
                                 else:
-                                   continue
+                                    continue
                     return False
             else:
                 instanceOf = soup.find("div", id="P31")
@@ -108,7 +111,7 @@ def get_wikidata_entity_type(url, num_try, kb_e_type, orig_e_type):
                         if link['title']:
                             if "Property" not in link['title']:
                                 link_text = link.get_text().lower()
-                                #type()
+                                # type()
                                 if link_text == "human":
                                     new_url = "https://wikidata.org" + link['href']
                                     num_try = num_try - 1
@@ -127,7 +130,8 @@ def get_wikidata_entity_type(url, num_try, kb_e_type, orig_e_type):
     else:
         return False
 
-def get_dbpedia_data_values(soup,query):
+
+def get_dbpedia_data_values(soup, query):
     features_properties = {}
     abstract = ""
     if soup.find("span", {"property": "dbo:abstract", "xml:lang": "en"}):
@@ -144,15 +148,16 @@ def get_dbpedia_data_values(soup,query):
         features_properties["title_query_match"] = False
     return features_properties
 
+
 def get_wikidata_values(soup, query):
     values = {}
-    title = soup.find('h1', id="firstHeading" , lang="en").find('span', class_="wikibase-title-label").get_text()
-    #values['title'] = title
+    title = soup.find('h1', id="firstHeading", lang="en").find('span', class_="wikibase-title-label").get_text()
+    # values['title'] = title
     if title.lower() == query:
         values['title_query_match'] = True
     else:
         values['title_query_match'] = False
-    gender_div = soup.find('div',id="P21")
+    gender_div = soup.find('div', id="P21")
     date = ""
     gender = ""
     description = ""
@@ -163,29 +168,29 @@ def get_wikidata_values(soup, query):
             link_text = a_tag.get_text().lower()
             if link_text == "male" or link_text == "female":
                 gender = link_text
-                #values['gender'] = link_text
+                # values['gender'] = link_text
     dob_div = soup.find('div', id="P569")
     if dob_div:
-        date = dob_div.find('div',class_="wikibase-snakview-value wikibase-snakview-variation-valuesnak").get_text()
-        #values['dob'] = date
+        date = dob_div.find('div', class_="wikibase-snakview-value wikibase-snakview-variation-valuesnak").get_text()
+        # values['dob'] = date
     tr_tags = soup.find('tbody', class_="wikibase-entitytermsforlanguagelistview-listview").find_all('tr')
     td_tags = None
     for tr in tr_tags:
-        #print(tr['class'])
+        # print(tr['class'])
         for classes in tr['class']:
             if "languageview-en" in classes:
                 td_tags = tr.find_all('td')
                 break
     aliases = []
     for td_tag in td_tags:
-        description_found = td_tag.find('div',class_="wikibase-descriptionview")
+        description_found = td_tag.find('div', class_="wikibase-descriptionview")
         if td_tag['class'][0] == "wikibase-entitytermsforlanguageview-aliases":
             li_tags = td_tag.find_all('li')
             aliases = []
             if li_tags:
                 for li_tag in li_tags:
                     aliases.append(li_tag.get_text())
-                #values["aliases"] = aliases
+                    # values["aliases"] = aliases
 
         if description_found:
             description = description_found.find('span').get_text()
@@ -197,8 +202,9 @@ def get_wikidata_values(soup, query):
 
     return values
 
+
 def context_abstract_similarity(abstract, orig_sentence):
-    abstract_tokens = word_tokenize(abstract.encode('ascii','ignore'))
+    abstract_tokens = word_tokenize(abstract.encode('ascii', 'ignore'))
     filtered_abstract = [w for w in abstract_tokens if not w in stop_words]
     orig_sent_tokens = word_tokenize(orig_sentence)
     filtered_context = [w for w in orig_sent_tokens if not w in stop_words]
@@ -211,11 +217,12 @@ def context_abstract_similarity(abstract, orig_sentence):
                 exact_token_match = exact_token_match + 1
             word_similarity += cosine_similarity(context_token, abstract_token, model)
     features['exact_token_matches'] = exact_token_match
-    #features['word_similarity'] = word_similarity
+    # features['word_similarity'] = word_similarity
     if len(abstract_tokens) != 0 and len(orig_sent_tokens) != 0:
-        word_similarity =  word_similarity/(len(abstract_tokens) * len(orig_sent_tokens))
+        word_similarity = word_similarity / (len(abstract_tokens) * len(orig_sent_tokens))
     features['sentence_abstract_similarity'] = word_similarity
     return features
+
 
 def get_features(bindings, orig_sentence, model, e_type, query):
     features = {}
@@ -223,31 +230,31 @@ def get_features(bindings, orig_sentence, model, e_type, query):
         features[f_id] = []
         for binding in bindings[f_id]:
             if "wikidata" in binding and "entity" in binding:
-                binding = binding.replace("entity","wiki")
+                binding = binding.replace("entity", "wiki")
             response = requests.get(binding)
             other_values = {}
             if response.status_code == 200:
-                #print(binding)
+                # print(binding)
                 binding_dict = {}
                 binding_dict[binding] = []
 
                 html = response.content
                 soup = BeautifulSoup(html, 'html.parser')
                 if "dbpedia" in binding:
-                    #parse dbpedia html
-                    entityTypeMatched = get_dbpedia_entity_type(binding,3, e_type)
-                    #print(binding)
+                    # parse dbpedia html
+                    entityTypeMatched = get_dbpedia_entity_type(binding, 3, e_type)
+                    # print(binding)
                     other_values = get_dbpedia_data_values(soup, query)
                     other_values['type_matched'] = entityTypeMatched
-                    other_values.update(context_abstract_similarity(other_values['abstract'],orig_sentence)) 
-                    
+                    other_values.update(context_abstract_similarity(other_values['abstract'], orig_sentence))
+
                 elif "wikidata" in binding:
-                    #parse wikidata html
+                    # parse wikidata html
                     entityTypeMatched = get_wikidata_entity_type(binding, 3, None, e_type)
-                    other_values = get_wikidata_values(soup,query)
-                    other_values['type_matched']= entityTypeMatched
-                    other_values.update(context_abstract_similarity(other_values['abstract'],orig_sentence))  
-                
+                    other_values = get_wikidata_values(soup, query)
+                    other_values['type_matched'] = entityTypeMatched
+                    other_values.update(context_abstract_similarity(other_values['abstract'], orig_sentence))
+
                 binding_dict[binding].append(other_values)
                 features[f_id].append(binding_dict)
     print(features)
@@ -259,9 +266,9 @@ def get_entity_KbID(features):
     for feature in features:
         points = 0
         for i in range(0, len(features[feature])):
-            #print("---------------")
-            #print(features[feature][i].values())
-            #print("---------------")
+            # print("---------------")
+            # print(features[feature][i].values())
+            # print("---------------")
             values = features[feature][i].values()
             for value in values:
                 values_dict = value[0]
@@ -272,10 +279,8 @@ def get_entity_KbID(features):
                 points = points + values_dict['exact_token_matches']
                 points = points + values_dict['sentence_abstract_similarity']
         ranked_features[feature] = points
-    return sorted(ranked_features.iteritems(), key=lambda (k,v): (v,k), reverse=True)[:1][0][0]
-    #return ranked_features
-    
-
+    return sorted(ranked_features.iteritems(), key=lambda (k, v): (v, k), reverse=True)[:1][0][0]
+    # return ranked_features
 
 
 def get_candidates(query):
@@ -283,27 +288,29 @@ def get_candidates(query):
     response = requests.get(ELASTICSEARCH_URL, params={'q': query, 'size': 100})
     labels = {}
     if response:
-            response = response.json()
-            for hit in response.get('hits', {}).get('hits', []):
-                    freebase_id = hit.get('_source', {}).get('resource')
-                    label = hit.get('_source', {}).get('label')
-                    score = hit.get('_score', 0)
-                    labels[label] = {'score': score, 'id': freebase_id}
+        response = response.json()
+        for hit in response.get('hits', {}).get('hits', []):
+            freebase_id = hit.get('_source', {}).get('resource')
+            label = hit.get('_source', {}).get('label')
+            score = hit.get('_score', 0)
+            labels[label] = {'score': score, 'id': freebase_id}
     print('Found %s results.' % len(labels))
 
     return labels
 
+
 def rank_candidates(candidate_list, nr):
-    facts  = {}
+    facts = {}
     u_id = 0
     for i in candidate_list:
         response = requests.post(TRIDENT_URL, data={'print': False, 'query': po_template % candidate_list[i]['id']})
         if response:
-                response = response.json()
-                n = int(response.get('stats',{}).get('nresults',0))
-                candidate_list[i]['facts'] = n
+            response = response.json()
+            n = int(response.get('stats', {}).get('nresults', 0))
+            candidate_list[i]['facts'] = n
 
-    return sorted(candidate_list.iteritems(), key=lambda (k,v): (v,k) , reverse=True)[:nr]
+    return sorted(candidate_list.iteritems(), key=lambda (k, v): (v, k), reverse=True)[:nr]
+
 
 def get_freebase_ids(sorted_candidate_list):
     unique_ids = set()
@@ -311,49 +318,53 @@ def get_freebase_ids(sorted_candidate_list):
         unique_ids.add(candidate[1]['id'])
     return unique_ids
 
+
 def get_trident_bindings(ids_set):
-    #bindings = []
+    # bindings = []
     bindings = defaultdict()
     for f_id in ids_set:
         response = requests.post(TRIDENT_URL, data={'print': True, 'query': same_as_template % f_id})
         if response:
-                response = response.json()
-                bindings[f_id] = []
-                for binding in response.get('results', {}).get('bindings', []):
-                    #print(binding)
-                    bindings[f_id].append(binding)
+            response = response.json()
+            bindings[f_id] = []
+            for binding in response.get('results', {}).get('bindings', []):
+                # print(binding)
+                bindings[f_id].append(binding)
     return bindings
+
 
 def compare_sent(s1, s2, model):
     tokenList1 = s1.split(" ")
     tokenList2 = s2.split(" ")
 
-    sim = 0 
-    for t1 in tokenList1: 
-        for t2 in tokenList2: 
+    sim = 0
+    for t1 in tokenList1:
+        for t2 in tokenList2:
             sim += cosine_similarity(t1, t2, model)
     return sim
 
-def cosine_similarity(w1, w2, model): 
+
+def cosine_similarity(w1, w2, model):
     w1 = w1.lower()
     w2 = w2.lower()
-    try: 
+    try:
         return numpy.dot(model[w1], model[w2]) / (numpy.linalg.norm(model[w1]) * numpy.linalg.norm(model[w2]))
-    except: 
+    except:
         return 0
+
 
 def fix_binding_urls(bindings):
     fixed_bindings = {}
     for f_id in bindings:
         fixed_bindings[f_id] = set()
         for binding in bindings[f_id]:
-            #print("bindings values")
-            #print(bindings.values()[0])
+            # print("bindings values")
+            # print(bindings.values()[0])
             url = binding.values()[0]["value"]
             if "dbpedia" in url:
-                
+
                 split_url = url.split('.')
-                #print(split_url)
+                # print(split_url)
                 split_url[-1] = "." + split_url[-1]
                 if "dbpedia" in split_url[0]:
                     new_url = split_url[0]
@@ -376,7 +387,7 @@ def run(query, context, _type, modelPath):
 
     labels = get_candidates(query)
     print("-------- LABELS --------")
-    top_candidates = rank_candidates(labels,10)
+    top_candidates = rank_candidates(labels, 10)
     print("-------- TOP CANDIDATES --------")
     top_candidates_ids = get_freebase_ids(top_candidates)
     print("-------- TOP CANDIDATES IDS --------")
