@@ -8,7 +8,7 @@ public class ONLP_EntityDetails implements Serializable {
     public double prob;
 
     public ONLP_EntityDetails(String name, String type, double prob) {
-        this.name = name;
+        this.name = name.trim();
         this.type = type;
         this.prob = prob;
     }
