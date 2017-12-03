@@ -3,6 +3,7 @@ from __future__ import division
 import requests
 import json
 from bs4 import BeautifulSoup
+import nltk
 from nltk import word_tokenize
 from nltk.corpus import stopwords
 import word2vec
@@ -11,7 +12,7 @@ from collections import defaultdict
 
 model = None
 # nltk.download('punkt')
-# nltk.download('stopwords')
+nltk.download('stopwords')
 stop_words = set(stopwords.words('english'))
 
 ELASTICSEARCH_URL = 'http://10.149.0.127:9200/freebase/label/_search'
