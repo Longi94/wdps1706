@@ -6,7 +6,7 @@ import json
 import re
 import collections
 import math
-import lxml.html
+#import lxml.html
 import urllib2
 from bs4 import BeautifulSoup
 from nltk import word_tokenize
@@ -43,7 +43,9 @@ SELECT DISTINCT * WHERE {
 features=[]
 
 def get_dbpedia_entity_type(link, try_num, e_type):
-    response = requests.get(link)
+    #print("db entity type link")
+    #print(link)
+    response = requests.get(link.strip())
     if response.status_code == 200:
         html = response.content
         soup = BeautifulSoup(html,'html.parser')
@@ -58,7 +60,8 @@ def get_dbpedia_entity_type(link, try_num, e_type):
                     return True
                 elif entity_name.lower() != 'class':
                     try_num = try_num - 1
-                    return get_dbpedia_entity_type(entity_type_link['href'], try_num, e_type)
+                    if "http" in entity_type_link['href']:
+                        return get_dbpedia_entity_type(entity_type_link['href'], try_num, e_type)
                 elif entity_name.lower() == 'class':
                     descripition_table = soup.find_all('div', class_='row')
                     for row in descripition_table:
@@ -69,6 +72,8 @@ def get_dbpedia_entity_type(link, try_num, e_type):
                             return False
             else:
                 return False
+    return False
+    
 
 def get_wikidata_entity_type(url, num_try, kb_e_type, orig_e_type):
     if num_try > 0:
@@ -120,7 +125,7 @@ def get_wikidata_entity_type(url, num_try, kb_e_type, orig_e_type):
     else:
         return False
 
-def get_dbpedia_data_values(soup):
+def get_dbpedia_data_values(soup,query):
     features_properties = {}
     abstract = soup.find("span", {"property": "dbo:abstract", "xml:lang": "en"}).get_text()
     features_properties['abstract'] = abstract
@@ -131,21 +136,28 @@ def get_dbpedia_data_values(soup):
         features_properties["title_query_match"] = False
     return features_properties
 
-def get_wikidata_values(soup):
+def get_wikidata_values(soup, query):
     values = {}
     title = soup.find('h1', id="firstHeading" , lang="en").find('span', class_="wikibase-title-label").get_text()
-    values['title'] = title
+    #values['title'] = title
+    if title.lower() == query:
+        values['title_query_match'] = True
+    else:
+        values['title_query_match'] = False
     gender_div = soup.find('div',id="P21")
+    date = ""
+    gender = ""
     if gender_div:
         a_tags = gender_div.find_all('a')
         for a_tag in a_tags:
             link_text = a_tag.get_text().lower()
             if link_text == "male" or link_text == "female":
-                values['gender'] = link_text
+                gender = link_text
+                #values['gender'] = link_text
     dob_div = soup.find('div', id="P569")
     if dob_div:
         date = dob_div.find('div',class_="wikibase-snakview-value wikibase-snakview-variation-valuesnak").get_text()
-        values['dob'] = date
+        #values['dob'] = date
     tr_tags = soup.find('tbody', class_="wikibase-entitytermsforlanguagelistview-listview").find_all('tr')
     td_tags = None
     for tr in tr_tags:
@@ -154,20 +166,25 @@ def get_wikidata_values(soup):
             if "languageview-en" in classes:
                 td_tags = tr.find_all('td')
                 break
-   
+    aliases = []
     for td_tag in td_tags:
         description_found = td_tag.find('div',class_="wikibase-descriptionview")
         if td_tag['class'][0] == "wikibase-entitytermsforlanguageview-aliases":
             li_tags = td_tag.find_all('li')
             aliases = []
             if li_tags:
-                print("found aliases")
                 for li_tag in li_tags:
                     aliases.append(li_tag.get_text())
-                values["aliases"] = aliases
+                #values["aliases"] = aliases
 
         if description_found:
-            values['description'] = description_found.find('span').get_text()
+            description = description_found.find('span').get_text()
+            for alias in aliases:
+                description = description + " " + alias
+            description = description + " " + date
+            description = description + " " + gender
+            values['abstract'] = description
+
     return values
 
 def context_abstract_similarity(abstract, orig_sentence):
@@ -184,13 +201,13 @@ def context_abstract_similarity(abstract, orig_sentence):
                 exact_token_match = exact_token_match + 1
             word_similarity += cosine_similarity(context_token, abstract_token, model)
     features['exact_token_matches'] = exact_token_match
-    features['word_similarity'] = word_similarity
-    return word_similarity/(len(abstract_tokens) * len(orig_sent_tokens))
+    #features['word_similarity'] = word_similarity
+    word_similarity =  word_similarity/(len(abstract_tokens) * len(orig_sent_tokens))
+    features['sentence_abstract_similarity'] = word_similarity
+    return features
 
 def get_features(bindings, orig_sentence, model, e_type, query):
-    print("Collecting Features")
     features = {}
-    idToAbstract = {}
     for f_id in bindings:
         features[f_id] = []
         for binding in bindings[f_id]:
@@ -199,6 +216,7 @@ def get_features(bindings, orig_sentence, model, e_type, query):
             response = requests.get(binding)
             other_values = {}
             if response.status_code == 200:
+                #print(binding)
                 binding_dict = {}
                 binding_dict[binding] = []
                 
@@ -206,32 +224,47 @@ def get_features(bindings, orig_sentence, model, e_type, query):
                 soup = BeautifulSoup(html, 'html.parser')
                 if "dbpedia" in binding:
                     #parse dbpedia html
-                    print("Parsing dbpedia page")
                     entityTypeMatched = get_dbpedia_entity_type(binding,3, e_type)
-                    other_values = get_dbpedia_data_values(soup)
+                    other_values = get_dbpedia_data_values(soup, query)
                     other_values['type_matched'] = entityTypeMatched
-                    other_values['sentence_abstract_similarity'] = context_abstract_similarity(other_values['abstract'],orig_sentence) 
-                
+                    other_values.update(context_abstract_similarity(other_values['abstract'],orig_sentence)) 
+                    
                 elif "wikidata" in binding:
                     #parse wikidata html
                     entityTypeMatched = get_wikidata_entity_type(binding, 3, None, e_type)
-                    other_values = get_wikidata_values(soup)
-                    other_values['e_type_matched']= entityTypeMatched
-                    other_values['sentence_abstract_similarity'] = context_abstract_similarity(other_values['description'],orig_sentence) 
-
-                #print("binding")
-                #print(binding)
-                #print("other values")
-                #print(other_values)
+                    other_values = get_wikidata_values(soup,query)
+                    other_values['type_matched']= entityTypeMatched
+                    other_values.update(context_abstract_similarity(other_values['abstract'],orig_sentence))  
+                
                 binding_dict[binding].append(other_values)
-                #print("binding dict")
-                #print(binding_dict)
                 features[f_id].append(binding_dict)
-                #print("features final")
-                #print(features)
-                #add feature to match query with title, exact match, contains, word2vec...
+    print(features)
+    return features
 
-    return json.dumps(features)
+
+def get_entity_KbID(features):
+    ranked_features = {}
+    for feature in features:
+        points = 0
+        for i in range(0, len(features[feature])):
+            #print("---------------")
+            #print(features[feature][i].values())
+            #print("---------------")
+            values = features[feature][i].values()
+            for value in values:
+                values_dict = value[0]
+                if values_dict['title_query_match'] == True:
+                    points = points + 1
+                if values_dict['type_matched'] == True:
+                    points = points + 1
+                points = points + values_dict['exact_token_matches']
+                points = points + values_dict['sentence_abstract_similarity']
+        ranked_features[feature] = points
+    return sorted(ranked_features.iteritems(), key=lambda (k,v): (v,k), reverse=True)[:1][0][0]
+    #return ranked_features
+    
+
+
 
 def get_candidates(query):
     print('Searching for "%s"...' % query)
@@ -283,6 +316,7 @@ def get_trident_bindings(ids_set):
                 response = response.json()
                 bindings[f_id] = []
                 for binding in response.get('results', {}).get('bindings', []):
+                    #print(binding)
                     bindings[f_id].append(binding)
     return bindings
 
@@ -350,11 +384,18 @@ if __name__ == "__main__":
     top_candidates_ids = get_freebase_ids(top_candidates)
     print("-------- TOP CANDIDATES IDS --------")
     bindings = get_trident_bindings(top_candidates_ids)
+    print("total bindings")
+    print(len(bindings))
     print("-------- BINDINGS --------")
     fixed_bindings = fix_binding_urls(bindings)
+    print("total bindings")
+    print(len(fixed_bindings))
     print("-------- FIXED BINDINGS --------")
     features = get_features(fixed_bindings, context, model, _type, query)
-    print(features)
+    print(json.dumps(features))
+    print("-------- Finished --------")
+    kb_id = get_entity_KbID(features)
+    print(kb_id)
 
 '''
 if __name__ == "__main__": 
