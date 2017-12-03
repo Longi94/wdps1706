@@ -256,7 +256,6 @@ def get_features(bindings, orig_sentence, model, e_type, query):
 
                 binding_dict[binding].append(other_values)
                 features[f_id].append(binding_dict)
-    print(features)
     return features
 
 
@@ -284,7 +283,7 @@ def get_entity_KbID(features):
 
 def get_candidates(query):
     print('Searching for "%s"...' % query)
-    response = requests.get(ELASTICSEARCH_URL, params={'q': query, 'size': 5})
+    response = requests.get(ELASTICSEARCH_URL, params={'q': query, 'size': 100})
     labels = {}
     if response:
         response = response.json()
@@ -367,7 +366,7 @@ def run(query, context, _type, modelPath):
         return None
 
     print("-------- LABELS --------")
-    top_candidates = rank_candidates(labels, 10)
+    top_candidates = rank_candidates(labels, 3)
     print("-------- TOP CANDIDATES --------")
     top_candidates_ids = get_freebase_ids(top_candidates)
     print("-------- TOP CANDIDATES IDS --------")
