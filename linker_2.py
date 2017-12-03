@@ -53,8 +53,14 @@ def get_dbpedia_entity_type(link, try_num, e_type):
         if div:
             div = div[0]
             a_tags = div.find_all('a')
-            entity_type_link = a_tags[0]
-            entity_name = entity_type_link.get_text()
+            entity_type_link = {}
+            entity_name = ""
+            if a_tags:
+                entity_type_link = a_tags[0]
+                entity_name = entity_type_link.get_text()
+            else:
+                entity_type_link['href'] = ""
+
             if try_num > 0:
                 if entity_name.lower() == e_type.lower():
                     return True
@@ -86,50 +92,58 @@ def get_wikidata_entity_type(url, num_try, kb_e_type, orig_e_type):
                 if subclassOf:
                     subclassOf_links = subclassOf.find_all('a')
                     for link in subclassOf_links:
-                        if "Property" not in link['title']:
-                            link_text = link.get_text().lower()
-                            if link_text == "person":
-                                return True
-                            elif link_text == "company":
-                                new_url = "https://wikidata.org" + link['href']
-                                num_try = num_try - 1
-                                return get_wikidata_entity_type(new_url, num_try, link_text, orig_e_type)
-                            elif link_text == "organization":
-                                return True
-                            else:
-                               continue
+                        if link['title']:
+                            if "Property" not in link['title']:
+                                link_text = link.get_text().lower()
+                                if link_text == "person":
+                                    return True
+                                elif link_text == "company":
+                                    new_url = "https://wikidata.org" + link['href']
+                                    num_try = num_try - 1
+                                    return get_wikidata_entity_type(new_url, num_try, link_text, orig_e_type)
+                                elif link_text == "organization":
+                                    return True
+                                else:
+                                   continue
                     return False
             else:
                 instanceOf = soup.find("div", id="P31")
                 if instanceOf:
                     instantceOf_links = instanceOf.find_all('a')
                     for link in instantceOf_links:
-                        if "Property" not in link['title']:
-                            link_text = link.get_text().lower()
-                            #type()
-                            if link_text == "human":
-                                new_url = "https://wikidata.org" + link['href']
-                                num_try = num_try - 1
-                                return get_wikidata_entity_type(new_url, num_try, link_text, orig_e_type)
-                            elif link_text == "person":
-                                return True
-                            elif link_text == "business enterprise":
-                                new_url = "https://wikidata.org" + link['href']
-                                num_try = num_try - 1
-                                return get_wikidata_entity_type(new_url, num_try, link_text, orig_e_type) 
-                            elif link_text == "country" and orig_e_type == "location":
-                                return True
-                            elif link_text == "city" or link_text == "village" or link_text == "town" and orig_e_type == "location":
-                                return True
+                        if link['title']:
+                            if "Property" not in link['title']:
+                                link_text = link.get_text().lower()
+                                #type()
+                                if link_text == "human":
+                                    new_url = "https://wikidata.org" + link['href']
+                                    num_try = num_try - 1
+                                    return get_wikidata_entity_type(new_url, num_try, link_text, orig_e_type)
+                                elif link_text == "person":
+                                    return True
+                                elif link_text == "business enterprise":
+                                    new_url = "https://wikidata.org" + link['href']
+                                    num_try = num_try - 1
+                                    return get_wikidata_entity_type(new_url, num_try, link_text, orig_e_type) 
+                                elif link_text == "country" and orig_e_type == "location":
+                                    return True
+                                elif link_text == "city" or link_text == "village" or link_text == "town" and orig_e_type == "location":
+                                    return True
                     return False
     else:
         return False
 
 def get_dbpedia_data_values(soup,query):
     features_properties = {}
-    abstract = soup.find("span", {"property": "dbo:abstract", "xml:lang": "en"}).get_text()
+    abstract = ""
+    if soup.find("span", {"property": "dbo:abstract", "xml:lang": "en"}):
+        abstract = soup.find("span", {"property": "dbo:abstract", "xml:lang": "en"}).get_text()
     features_properties['abstract'] = abstract
-    title = soup.find("h1", id="title").find('a').get_text()
+    title = ""
+    if soup.find("h1", id="title"):
+        a_tag = soup.find("h1", id="title").find('a')
+        if a_tag:
+            title = a_tag.get_text()
     if title == query:
         features_properties["title_query_match"] = True
     else:
@@ -147,6 +161,8 @@ def get_wikidata_values(soup, query):
     gender_div = soup.find('div',id="P21")
     date = ""
     gender = ""
+    description = ""
+
     if gender_div:
         a_tags = gender_div.find_all('a')
         for a_tag in a_tags:
@@ -183,7 +199,7 @@ def get_wikidata_values(soup, query):
                 description = description + " " + alias
             description = description + " " + date
             description = description + " " + gender
-            values['abstract'] = description
+    values['abstract'] = description
 
     return values
 
@@ -202,7 +218,8 @@ def context_abstract_similarity(abstract, orig_sentence):
             word_similarity += cosine_similarity(context_token, abstract_token, model)
     features['exact_token_matches'] = exact_token_match
     #features['word_similarity'] = word_similarity
-    word_similarity =  word_similarity/(len(abstract_tokens) * len(orig_sent_tokens))
+    if len(abstract_tokens) != 0 and len(orig_sent_tokens) != 0:
+        word_similarity =  word_similarity/(len(abstract_tokens) * len(orig_sent_tokens))
     features['sentence_abstract_similarity'] = word_similarity
     return features
 
@@ -225,6 +242,7 @@ def get_features(bindings, orig_sentence, model, e_type, query):
                 if "dbpedia" in binding:
                     #parse dbpedia html
                     entityTypeMatched = get_dbpedia_entity_type(binding,3, e_type)
+                    #print(binding)
                     other_values = get_dbpedia_data_values(soup, query)
                     other_values['type_matched'] = entityTypeMatched
                     other_values.update(context_abstract_similarity(other_values['abstract'],orig_sentence)) 
@@ -288,17 +306,12 @@ def rank_candidates(candidate_list, nr):
     facts  = {}
     u_id = 0
     for i in candidate_list:
-        #print([candidate_list[i]])
         response = requests.post(TRIDENT_URL, data={'print': False, 'query': po_template % candidate_list[i]['id']})
         if response:
                 response = response.json()
                 n = int(response.get('stats',{}).get('nresults',0))
-                #print("Found " + str(n) + " facts about " + str(i) + " [" + str(candidate_list[i]).encode('utf-8') + "] with Sparql")
                 candidate_list[i]['facts'] = n
-                candidate_list[i]['u_id'] = u_id
-                u_id = u_id+1
-                #print(n)
-    #return sorted(candidate_list, key=candidate_list['facts'], reverse=True)[:n]
+
     return sorted(candidate_list.iteritems(), key=lambda (k,v): (v,k) , reverse=True)[:nr]
 
 def get_freebase_ids(sorted_candidate_list):
@@ -379,7 +392,7 @@ if __name__ == "__main__":
     _type = sys.argv[4] 
     labels = get_candidates(query)
     print("-------- LABELS --------")
-    top_candidates = rank_candidates(labels,5)
+    top_candidates = rank_candidates(labels,10)
     print("-------- TOP CANDIDATES --------")
     top_candidates_ids = get_freebase_ids(top_candidates)
     print("-------- TOP CANDIDATES IDS --------")
