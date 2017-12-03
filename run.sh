@@ -22,10 +22,10 @@ hdfs dfs -rm -r -f /user/wdps1706/spark-data
 
 
 PYSPARK_PYTHON=$(readlink -f $(which python)) ~/spark-2.1.2-bin-without-hadoop/bin/spark-submit \
-  --master yarn \
-  --deploy-mode cluster \
-  --num-executors ${EXECUTORS} \
+  --py-files linker_2.py \
+  --master local \
   spark_linker.py
+
 
 } &> "logs_${timestamp}"
 

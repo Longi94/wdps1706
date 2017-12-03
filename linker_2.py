@@ -1,23 +1,17 @@
 from __future__ import print_function
 from __future__ import division
 import requests
-import sys
 import json
-import re
-import collections
-import math
-#import lxml.html
-import urllib2
 from bs4 import BeautifulSoup
 from nltk import word_tokenize
 from nltk.corpus import stopwords
-import nltk
 import word2vec
 import numpy
 from collections import defaultdict
 
-#nltk.download('punkt')
-#nltk.download('stopwords')
+model = None
+# nltk.download('punkt')
+# nltk.download('stopwords')
 stop_words = set(stopwords.words('english'))
 
 ELASTICSEARCH_URL = 'http://10.149.0.127:9200/freebase/label/_search'
@@ -124,7 +118,7 @@ def get_wikidata_entity_type(url, num_try, kb_e_type, orig_e_type):
                                 elif link_text == "business enterprise":
                                     new_url = "https://wikidata.org" + link['href']
                                     num_try = num_try - 1
-                                    return get_wikidata_entity_type(new_url, num_try, link_text, orig_e_type) 
+                                    return get_wikidata_entity_type(new_url, num_try, link_text, orig_e_type)
                                 elif link_text == "country" and orig_e_type == "location":
                                     return True
                                 elif link_text == "city" or link_text == "village" or link_text == "town" and orig_e_type == "location":
@@ -236,7 +230,7 @@ def get_features(bindings, orig_sentence, model, e_type, query):
                 #print(binding)
                 binding_dict = {}
                 binding_dict[binding] = []
-                
+
                 html = response.content
                 soup = BeautifulSoup(html, 'html.parser')
                 if "dbpedia" in binding:
@@ -299,9 +293,6 @@ def get_candidates(query):
 
     return labels
 
-def get_best(i):
-        return math.log(facts[i]) * scores[i]
-
 def rank_candidates(candidate_list, nr):
     facts  = {}
     u_id = 0
@@ -332,13 +323,6 @@ def get_trident_bindings(ids_set):
                     #print(binding)
                     bindings[f_id].append(binding)
     return bindings
-
-def get_google(query_id): 
-    response = requests.get("https://www.google.com/search?q=knowledge+graph+search+api&kponly&kgmid=/" + query_id)
-    if response: 
-        html = response.content
-        parsed = lxml.fromstring(html).cssselect("_gdf kno-fb-ctx")
-        parsed_lines = lxml.fromstring(html).cssselect("")
 
 def compare_sent(s1, s2, model):
     tokenList1 = s1.split(" ")
@@ -384,12 +368,12 @@ def fix_binding_urls(bindings):
     return fixed_bindings
 
 
-if __name__ == "__main__":
-    
-    query = sys.argv[1]
-    model = word2vec.load(sys.argv[2])
-    context = sys.argv[3]
-    _type = sys.argv[4] 
+def run(query, context, _type, modelPath):
+    global model
+    if model is None:
+        print("Model not loaded. should not happen")
+        model = word2vec.WordVectors.from_binary(modelPath, encoding="ISO-8859-1")
+
     labels = get_candidates(query)
     print("-------- LABELS --------")
     top_candidates = rank_candidates(labels,10)
@@ -408,37 +392,12 @@ if __name__ == "__main__":
     print(json.dumps(features))
     print("-------- Finished --------")
     kb_id = get_entity_KbID(features)
-    print(kb_id)
+    print("Last result", kb_id)
+    return kb_id
 
-'''
-if __name__ == "__main__": 
-    query = sys.argv[1]
-    model = sys.argv[2]
-    context = sys.argv[3]
-    _type = sys.argv[4]
-    regex = re.compile('[^a-zA-Z]')
-    regex2 = re.compile('\s+')
-    context = regex.sub(' ', context)
-    context = regex2.sub(' ', context)
-    print(context)
-    labels = get_candidates(query)
-    print(labels)
-    model = word2vec.load(sys.argv[2])
-    best = 0 
-    winner = ""
-    for candidate in labels: 
-        score = 0 
-        print("working on cadidate:", candidate)
-        abst = get_abstract(candidate)
-        if not abst: 
-            #print("no abstract :(")
-            score = compare_sent(query + " " + _type, context, model)
-            print("Sim result: ", candidate, score)
-            continue
-        score = compare_sent(context + " " + _type, abst, model)
-        print("Sim result: ", candidate, score)
-        if score > best: 
-            best = score
-            print(abst)
-            print("######################################Current winner", labels[candidate], candidate) 
-'''
+
+def init_model(modelPath):
+    global model
+    print("Loading model...")
+    model = word2vec.WordVectors.from_binary(modelPath, encoding="ISO-8859-1")
+    print("Model loaded.")

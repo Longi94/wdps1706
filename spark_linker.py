@@ -4,15 +4,15 @@ from pyspark.sql import SparkSession
 
 INPUT_PATH = 'spark-data/entities'
 OUTPUT_PATH = 'spark-data/links'
+MODEL_PATH = '../kian/word2vec/data/text8-vector.bin'
 
 
 def process_sentence(sentence):
     links = []
 
-    # TODO do the stuff here the sentence dict has an ents list, each element has a name, type and prob property
-    # TODO must return a list of {name, entity_id} dicts
     for entity in sentence['ents']:
-        links.append({'name': entity['name'], 'entity_id': '/m/asdf' + entity['type']})
+        links.append({'name': entity['name'],
+                      'entity_id': run(entity['name'], sentence['text'], entity['type'], MODEL_PATH)})
 
     return links
 
@@ -26,6 +26,8 @@ def process_sentences(record):
 
 
 if __name__ == "__main__":
+    init_model(MODEL_PATH)
+
     spark = SparkSession \
         .builder \
         .appName("SparkLinker") \
