@@ -86,9 +86,9 @@ def get_wikidata_entity_type(url, num_try, kb_e_type, orig_e_type):
                             if link_text == "person":
                                 return True
                             elif link_text == "company":
-                                new_url = "http://wikidata.org" + link['href']
+                                new_url = "https://wikidata.org" + link['href']
                                 num_try = num_try - 1
-                                return get_type(new_url, num_try, link_text, orig_e_type)
+                                return get_wikidata_entity_type(new_url, num_try, link_text, orig_e_type)
                             elif link_text == "organization":
                                 return True
                             else:
@@ -103,15 +103,15 @@ def get_wikidata_entity_type(url, num_try, kb_e_type, orig_e_type):
                             link_text = link.get_text().lower()
                             #type()
                             if link_text == "human":
-                                new_url = "http://wikidata.org" + link['href']
+                                new_url = "https://wikidata.org" + link['href']
                                 num_try = num_try - 1
-                                return get_type(new_url, num_try, link_text, orig_e_type)
+                                return get_wikidata_entity_type(new_url, num_try, link_text, orig_e_type)
                             elif link_text == "person":
                                 return True
                             elif link_text == "business enterprise":
-                                new_url = "http://wikidata.org" + link['href']
+                                new_url = "https://wikidata.org" + link['href']
                                 num_try = num_try - 1
-                                return get_type(new_url, num_try, link_text, orig_e_type) 
+                                return get_wikidata_entity_type(new_url, num_try, link_text, orig_e_type) 
                             elif link_text == "country" and orig_e_type == "location":
                                 return True
                             elif link_text == "city" or link_text == "village" or link_text == "town" and orig_e_type == "location":
@@ -121,6 +121,7 @@ def get_wikidata_entity_type(url, num_try, kb_e_type, orig_e_type):
         return False
 
 def get_dbpedia_data_values(soup):
+    features_properties = {}
     abstract = soup.find("span", {"property": "dbo:abstract", "xml:lang": "en"}).get_text()
     features_properties['abstract'] = abstract
     title = soup.find("h1", id="title").find('a').get_text()
@@ -158,11 +159,13 @@ def get_wikidata_values(soup):
         description_found = td_tag.find('div',class_="wikibase-descriptionview")
         if td_tag['class'][0] == "wikibase-entitytermsforlanguageview-aliases":
             li_tags = td_tag.find_all('li')
+            aliases = []
             if li_tags:
-                aliases = []
-            for li_tag in li_tags:
-                aliases.append(li_tag.get_text())
-            values["aliases"] = aliases
+                print("found aliases")
+                for li_tag in li_tags:
+                    aliases.append(li_tag.get_text())
+                values["aliases"] = aliases
+
         if description_found:
             values['description'] = description_found.find('span').get_text()
     return values
@@ -172,7 +175,7 @@ def context_abstract_similarity(abstract, orig_sentence):
     filtered_abstract = [w for w in abstract_tokens if not w in stop_words]
     orig_sent_tokens = word_tokenize(orig_sentence)
     filtered_context = [w for w in orig_sent_tokens if not w in stop_words]
-
+    features = {}
     exact_token_match = 0
     word_similarity = 0
     for context_token in filtered_context:
@@ -180,7 +183,8 @@ def context_abstract_similarity(abstract, orig_sentence):
             if context_token == abstract_token:
                 exact_token_match = exact_token_match + 1
             word_similarity += cosine_similarity(context_token, abstract_token, model)
-
+    features['exact_token_matches'] = exact_token_match
+    features['word_similarity'] = word_similarity
     return word_similarity/(len(abstract_tokens) * len(orig_sent_tokens))
 
 def get_features(bindings, orig_sentence, model, e_type, query):
@@ -188,13 +192,15 @@ def get_features(bindings, orig_sentence, model, e_type, query):
     features = {}
     idToAbstract = {}
     for f_id in bindings:
+        features[f_id] = []
         for binding in bindings[f_id]:
+            if "wikidata" in binding and "entity" in binding:
+                binding = binding.replace("entity","wiki")
             response = requests.get(binding)
+            other_values = {}
             if response.status_code == 200:
-                features[f_id] = []
                 binding_dict = {}
                 binding_dict[binding] = []
-                other_values = {}
                 
                 html = response.content
                 soup = BeautifulSoup(html, 'html.parser')
@@ -205,20 +211,24 @@ def get_features(bindings, orig_sentence, model, e_type, query):
                     other_values = get_dbpedia_data_values(soup)
                     other_values['type_matched'] = entityTypeMatched
                     other_values['sentence_abstract_similarity'] = context_abstract_similarity(other_values['abstract'],orig_sentence) 
+                
                 elif "wikidata" in binding:
                     #parse wikidata html
-                    print("Parsing Wikidata page")
-                    print(binding)
                     entityTypeMatched = get_wikidata_entity_type(binding, 3, None, e_type)
                     other_values = get_wikidata_values(soup)
                     other_values['e_type_matched']= entityTypeMatched
                     other_values['sentence_abstract_similarity'] = context_abstract_similarity(other_values['description'],orig_sentence) 
-                else:
-                    print("probably yago")
-                    #parse yago html
-                
+
+                #print("binding")
+                #print(binding)
+                #print("other values")
+                #print(other_values)
                 binding_dict[binding].append(other_values)
+                #print("binding dict")
+                #print(binding_dict)
                 features[f_id].append(binding_dict)
+                #print("features final")
+                #print(features)
                 #add feature to match query with title, exact match, contains, word2vec...
 
     return json.dumps(features)
@@ -327,14 +337,15 @@ def fix_binding_urls(bindings):
     return fixed_bindings
 
 
-def run(query, context, _type):
-    if model = None:
-        print("Model not loaded. should not happen")
-        sys.exit()
-
+if __name__ == "__main__":
+    
+    query = sys.argv[1]
+    model = word2vec.load(sys.argv[2])
+    context = sys.argv[3]
+    _type = sys.argv[4] 
     labels = get_candidates(query)
     print("-------- LABELS --------")
-    top_candidates = rank_candidates(labels, 5)
+    top_candidates = rank_candidates(labels,5)
     print("-------- TOP CANDIDATES --------")
     top_candidates_ids = get_freebase_ids(top_candidates)
     print("-------- TOP CANDIDATES IDS --------")
@@ -345,17 +356,35 @@ def run(query, context, _type):
     features = get_features(fixed_bindings, context, model, _type, query)
     print(features)
 
-
-def init_model(modelPath):
-    global model
-    model = word2vec.load(sys.argv[2])
-
-
-if __name__ == "__main__":
-    init_model(sys.argv[2])
-
+'''
+if __name__ == "__main__": 
     query = sys.argv[1]
+    model = sys.argv[2]
     context = sys.argv[3]
     _type = sys.argv[4]
-
-    run(query, context, _type)
+    regex = re.compile('[^a-zA-Z]')
+    regex2 = re.compile('\s+')
+    context = regex.sub(' ', context)
+    context = regex2.sub(' ', context)
+    print(context)
+    labels = get_candidates(query)
+    print(labels)
+    model = word2vec.load(sys.argv[2])
+    best = 0 
+    winner = ""
+    for candidate in labels: 
+        score = 0 
+        print("working on cadidate:", candidate)
+        abst = get_abstract(candidate)
+        if not abst: 
+            #print("no abstract :(")
+            score = compare_sent(query + " " + _type, context, model)
+            print("Sim result: ", candidate, score)
+            continue
+        score = compare_sent(context + " " + _type, abst, model)
+        print("Sim result: ", candidate, score)
+        if score > best: 
+            best = score
+            print(abst)
+            print("######################################Current winner", labels[candidate], candidate) 
+'''
