@@ -1,3 +1,4 @@
+from linker_2 import init_model, run
 from json import loads
 from pyspark.sql import SparkSession
 

@@ -327,15 +327,14 @@ def fix_binding_urls(bindings):
     return fixed_bindings
 
 
-if __name__ == "__main__":
-    
-    query = sys.argv[1]
-    model = word2vec.load(sys.argv[2])
-    context = sys.argv[3]
-    _type = sys.argv[4] 
+def run(query, context, _type):
+    if model = None:
+        print("Model not loaded. should not happen")
+        sys.exit()
+
     labels = get_candidates(query)
     print("-------- LABELS --------")
-    top_candidates = rank_candidates(labels,5)
+    top_candidates = rank_candidates(labels, 5)
     print("-------- TOP CANDIDATES --------")
     top_candidates_ids = get_freebase_ids(top_candidates)
     print("-------- TOP CANDIDATES IDS --------")
@@ -346,35 +345,17 @@ if __name__ == "__main__":
     features = get_features(fixed_bindings, context, model, _type, query)
     print(features)
 
-'''
-if __name__ == "__main__": 
+
+def init_model(modelPath):
+    global model
+    model = word2vec.load(sys.argv[2])
+
+
+if __name__ == "__main__":
+    init_model(sys.argv[2])
+
     query = sys.argv[1]
-    model = sys.argv[2]
     context = sys.argv[3]
     _type = sys.argv[4]
-    regex = re.compile('[^a-zA-Z]')
-    regex2 = re.compile('\s+')
-    context = regex.sub(' ', context)
-    context = regex2.sub(' ', context)
-    print(context)
-    labels = get_candidates(query)
-    print(labels)
-    model = word2vec.load(sys.argv[2])
-    best = 0 
-    winner = ""
-    for candidate in labels: 
-        score = 0 
-        print("working on cadidate:", candidate)
-        abst = get_abstract(candidate)
-        if not abst: 
-            #print("no abstract :(")
-            score = compare_sent(query + " " + _type, context, model)
-            print("Sim result: ", candidate, score)
-            continue
-        score = compare_sent(context + " " + _type, abst, model)
-        print("Sim result: ", candidate, score)
-        if score > best: 
-            best = score
-            print(abst)
-            print("######################################Current winner", labels[candidate], candidate) 
-'''
+
+    run(query, context, _type)
