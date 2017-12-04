@@ -34,7 +34,10 @@ In this stage we get the knowledge base URLs for possible candidates, and fix th
 5) Following this, the URLs are filtered to remove any unusable URLs and also "fix" any URLs which have a domain prefix that makes them unusable, but would be usable without them. For example: http://www.de.dbpedia.org/page/Barack_Obama would be converted to http://www.dbpedia.org/page/Barack_Obama
 
 ## Entity linking
-In this stage we attempt to link the named entities found in stage 2 to the right knowledge base ID from the list returned in stage 3.
+In this stage we attempt to link the named entities found in stage 2 to the right knowledge base ID from the list returned in stage 3. Data was extracted from DBPEDIA and WIKIDATA.
+
+1) DBPEDIA - From dbpedia we extract the following information: i) Title, ii) abstract, iii) entity type. 
+2) WIKIDATA - From wikidata we extract the following information: i) Title, ii) Description, iii) entity type, iii)Date of Birth (when applicable), iv) Gender (when applicable), and v) aliases. The aliases, dob and gender (when found) are added to the description, each word separated by a white space.
 
 Four major attributes are compared to make the linking phase, namely: 
   - **Context matching**: We use the links obtained in section 3 to get the abstract of each candidate entity. We then remove the stop-words from this text and the original sentence of the main entity and compare the remaining words using word2vec. This model, which is trained using [Google's own dataset](https://github.com/mmihaltz/word2vec-GoogleNews-vectors), will return a 300 dimension vector for each word. Two vectors, corresponding to two words are than compared with cosine similarity of their vectors (which is a value between 0 and 1). This process happens for every element of the vector and result are accumulated and then divided by the total number of tokens. As a whole, this will yield an approximate probability of similarity between the original sentence and the abstract of the candidate. This value will be associated with the score of that candidate
