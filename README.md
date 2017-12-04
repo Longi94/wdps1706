@@ -37,3 +37,11 @@ In this stage we get the knowledge base URLs for possible candidates, and fix th
 In this stage we attempt to link the named entities found in stage 2 to the right knowledge base ID from the list returned in stage 3.
 
 1)
+
+## The pipeline
+The text extraction and the pre-processing part of the pipeline is done
+by a single Java Spark application while the rest is done by a Python
+Spark application. As a result, the bash script to generate the output
+runs two consecutive Spark applications. While the Java application runs
+very well on a cluster, due to issues with Python dependencies, the
+second stage is ran in a local environment.
