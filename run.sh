@@ -20,12 +20,14 @@ hdfs dfs -rm -r -f /user/wdps1706/spark-data
   --num-executors ${EXECUTORS} \
   wdps1706-1.0-SNAPSHOT.jar ${INFILE} ${ATT} ${EXECUTORS}
 
+source spark_env/bin/activate
 
 PYSPARK_PYTHON=$(readlink -f $(which python)) ~/spark-2.1.2-bin-without-hadoop/bin/spark-submit \
   --py-files linker_2.py \
   --master local \
   spark_linker.py
 
+deactivate
 
 } &> "logs_${timestamp}"
 
