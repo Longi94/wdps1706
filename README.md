@@ -18,11 +18,25 @@ handled when extracting the text.
 extracted text. Identifiers with empty text are thrown away.
 
 ## Pre-processing
-This stage is done using the Apache openNLP tool.
+This stage is done using the Apache openNLP tools.
+Used tools:
+- Sentence Detector
+- Language Detector
+- Tokenizer
+- POS Tagger
+- Lemmatizer
+- Name Finder (NER)
 
-1) The sentences are filtered to try to remove non English words whenever possible, following this tokenization takes place.
-2) POS tagging is then done on the tokenized sentences
-3) Finally, NER is done using the tool itself. The output from this is a json file with the WARC ID for each warc file, and the list of sentences and entities in those sentences for that warc file.
+Tools are based on already pre-trained models that are available here: http://opennlp.sourceforge.net/models-1.5/
+
+1) Input text is being divided into sentences by Sentence Detector Tool.
+2) The sentences are filtered to try to remove non English words whenever possible. Only sentences recognized as english take into account for further processing.
+3) Each senctence is being tokenized by Tokenizer Tool.
+4) Tokenized sentence is then passed to the Part Of Speech Tagger.
+5) To improve efficiency of NER, tokens are being lemmatized by Lemmatizer Tool (based on POS Tags as well).
+6) Lemmatizer in not efficient enough and not all tokens are lemmatized successfully - in that situation we keep original tokens.
+7) Lemmas (and tokens) are being passed to Name Finder Tool that provides Name Entity Recogition. As a result we receive a set of recognized entities for each sentence.
+8) Each processed sentence is being wrapped with recognized entities and placed in a result list of wrappers that are passed for further processing. The output from this is a json file with the WARC ID for each warc file, and the list of sentences and entities in those sentences for that warc file.
 
 ## Getting candidate entities URLs
 In this stage we get the knowledge base URLs for possible candidates, and fix them.
