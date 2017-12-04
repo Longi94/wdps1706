@@ -1,7 +1,21 @@
 # wdps1706
 
 ## Extracting the text
-First the WARC file is parsed, using spark and 'boilerpipe' to split the HTML for different warc IDs and then extract the html, and subsequently the text inside the HTML tags.
+1) The WARC file(s) is loaded into Spark by splitting the file into WARC
+records. Since compressed files cannot be partitioned before
+decompressing the whole file, the RDD created by Spark is repartitioned.
+2) Spark reads through the whole file and HTML code is detected just by
+looking for a line starting with `<!DOCTYPE HTML`.
+3) With the [Jsoup](https://github.com/jhy/jsoup) Java library useless
+tags that definitely contain no useful text (e.g. script, link or svg)
+are removed to make processing faster.
+4) The [boilerpipe](https://github.com/robbypond/boilerpipe) Java
+library is used to extract text from HTML strings. We noticed that
+there were cases where there was escaped HTMLcode inside the website.
+These were found to be inside `summary` and`figcaption` tags and were
+handled when extracting the text.
+5) The output is the identifier of the web page and the corresponding
+extracted text. Identifiers with empty text are thrown away.
 
 ## Pre-processing
 This stage is done using the Apache openNLP tool.
