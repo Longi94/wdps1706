@@ -36,7 +36,13 @@ In this stage we get the knowledge base URLs for possible candidates, and fix th
 ## Entity linking
 In this stage we attempt to link the named entities found in stage 2 to the right knowledge base ID from the list returned in stage 3.
 
-1)
+Four major attributes are compared to make the linking phase, namely: 
+  - **Context matching**: We use the links obtained in section 3 to get the abstract of each candidate entity. We then remove the stop-words from this text and the original sentence of the main entity and compare the remaining words using word2vec. This model, which is trained using [Google's own dataset](https://github.com/mmihaltz/word2vec-GoogleNews-vectors), will return a 300 dimension vector for each word. Two vectors, corresponding to two words are than compared with cosine similarity of their vectors (which is a value between 0 and 1). This process happens for every element of the vector and result are accumulated and then divided by the total number of tokens. As a whole, this will yield an approximate probability of similarity between the original sentence and the abstract of the candidate. This value will be associated with the score of that candidate
+  - **Type Matching**: If the type of the entity is equal to the type scraped from the links of the candidate, this will also be treated as a +1 score for that candidate.
+  - **Query Title Matching**: If the title of the query is the exact same as the title of the link, another +1 will be added to the score. 
+  - **Common Keywords**: The number of exact keywords in the original sentence and the abstract will be added and divided by the total number. This value will be normalized because it is less significant. In fact, it acts as a means to emphasize exacts matches in word2vec (which return 1 as probability) even more. 
+  
+The Combination of these four attributes will main features of each candidates and the candidate with the maximum score, will be returned as the winner.
 
 ## The pipeline
 The text extraction and the pre-processing part of the pipeline is done
